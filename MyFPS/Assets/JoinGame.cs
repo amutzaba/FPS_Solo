@@ -1,8 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Networking;
 using UnityEngine.Networking.Match;
+
 
 public class JoinGame : MonoBehaviour {
 
@@ -33,6 +35,13 @@ public class JoinGame : MonoBehaviour {
 	public void RefreshRoomList ()
 	{
 		ClearRoomList();
+
+        if (networkManager.matchMaker == null)
+        {
+            //restarting matchmaker incase refreshing messes it up after
+            //joining a game that was ended from its host
+            networkManager.StartMatchMaker();
+        }
 		networkManager.matchMaker.ListMatches(0, 20, "", true, 0, 0, OnMatchList);
 		status.text = "Loading...";
 	}
@@ -83,8 +92,35 @@ public class JoinGame : MonoBehaviour {
 	public void JoinRoom (MatchInfoSnapshot _match)
 	{
 		networkManager.matchMaker.JoinMatch(_match.networkId, "", "", "", 0, 0, networkManager.OnMatchJoined);
-		ClearRoomList();
-		status.text = "JOINING...";
+        StartCoroutine(WaitForJoin());
 	}
+
+    IEnumerator WaitForJoin()
+    {
+        ClearRoomList();
+
+        //while this countdown is not 0, the game will attempt to connect
+        int countdown = 10;
+        while (countdown > 0)
+        {
+            status.text = "JOINING...(" + countdown + ")";
+            yield return new WaitForSeconds(1);
+            countdown--;
+        }
+        //failed to connect to the game
+        status.text = "failed to join game";
+        yield return new WaitForSeconds(1);
+        //gets information for our match incase the room is still being hosted by unitys matchmaker
+        //so this makes sure to drop the connection
+        MatchInfo matchInfo = networkManager.matchInfo;
+        if (matchInfo != null)
+        {
+            //assures quit hosting of game
+            networkManager.matchMaker.DropConnection(matchInfo.networkId, matchInfo.nodeId, 0, networkManager.OnDropConnection);
+            networkManager.StopHost();
+        }
+        RefreshRoomList();
+
+    }
 
 }

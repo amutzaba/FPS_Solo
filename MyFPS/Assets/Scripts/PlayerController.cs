@@ -50,7 +50,24 @@ public class PlayerController : MonoBehaviour {
 	void Update ()
 	{
 		if (PauseMenu.IsOn)
-			return;
+        {
+            //takes cursor lock off when paused to quit game
+            if (Cursor.lockState != CursorLockMode.None)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                //these settings properly make sure our player or camera does not move
+                motor.Move(Vector3.zero);
+                motor.Rotate(Vector3.zero);
+                motor.RotateCamera(0f);
+            }
+                return;
+        }
+
+
+        if (Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
 
 		//Setting target position for spring
 		//This makes the physics act right when it comes to

@@ -192,5 +192,4 @@ public class Player : NetworkBehaviour {
 		GameObject _gfxIns = (GameObject)Instantiate(spawnEffect, transform.position, Quaternion.identity);
 		Destroy(_gfxIns, 3f);
 	}
-
 }
