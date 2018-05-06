@@ -12,6 +12,9 @@ public class Player : NetworkBehaviour {
 		get { return _isDead; }
 		protected set { _isDead = value; }
 	}
+    int deaths = 0;
+    int DeathLimit = 2;
+
 
     [SerializeField]
     private int maxHealth = 100;
@@ -99,39 +102,53 @@ public class Player : NetworkBehaviour {
 	private void Die()
 	{
 		isDead = true;
+        deaths++;
+        if (deaths < DeathLimit)
+        {
+            //Disable components
+            for (int i = 0; i < disableOnDeath.Length; i++)
+            {
+                disableOnDeath[i].enabled = false;
+            }
 
-		//Disable components
-		for (int i = 0; i < disableOnDeath.Length; i++)
-		{
-			disableOnDeath[i].enabled = false;
-		}
+            //Disable GameObjects
+            for (int i = 0; i < disableGameObjectsOnDeath.Length; i++)
+            {
+                disableGameObjectsOnDeath[i].SetActive(false);
+            }
 
-		//Disable GameObjects
-		for (int i = 0; i < disableGameObjectsOnDeath.Length; i++)
-		{
-			disableGameObjectsOnDeath[i].SetActive(false);
-		}
+            //Disable the collider
+            Collider _col = GetComponent<Collider>();
+            if (_col != null)
+            {
+                _col.enabled = false;
+            }
+            //Spawn a death effect
+            GameObject _gfxIns = (GameObject)Instantiate(deathEffect, transform.position, Quaternion.identity);
+            Destroy(_gfxIns, 3f);
 
-		//Disable the collider
-		Collider _col = GetComponent<Collider>();
-		if (_col != null)
-			_col.enabled = false;
+            //Switch cameras
+            if (isLocalPlayer)
+            {
+                GameManager.instance.SetSceneCameraActive(true);
+                GetComponent<PlayerSetup>().playerUIInstance.SetActive(false);
+            }
 
-		//Spawn a death effect
-		GameObject _gfxIns = (GameObject)Instantiate(deathEffect, transform.position, Quaternion.identity);
-		Destroy(_gfxIns, 3f);
+            Debug.Log(transform.name + " is DEAD!");
 
-		//Switch cameras
-		if (isLocalPlayer)
-		{
-			GameManager.instance.SetSceneCameraActive(true);
-			GetComponent<PlayerSetup>().playerUIInstance.SetActive(false);
-		}
+            //Debug.Log(transform.name + " has lost, quit game.");
 
-		Debug.Log(transform.name + " is DEAD!");
+            StartCoroutine(Respawn());
+        }
+        if (deaths == DeathLimit)
+        {
+            //endgame
+            Debug.Log(transform.name + " has lost, quit game.");
+            StartCoroutine(Respawn());
+            GetComponent<PlayerController>().thrusterForce -= 500f;
 
-		StartCoroutine(Respawn());
-	}
+        }
+    }
 
 	private IEnumerator Respawn ()
 	{
