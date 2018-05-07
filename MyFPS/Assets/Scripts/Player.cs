@@ -34,7 +34,7 @@ public class Player : NetworkBehaviour {
 
 	[SerializeField]
 	private GameObject spawnEffect;
-
+    //first time initializing the player in the gameroom
 	private bool firstSetup = true;
 
 	public void SetupPlayer ()
